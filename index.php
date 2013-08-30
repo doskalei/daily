@@ -111,7 +111,7 @@
 	</section>
 	<input id="input" type="text" x-webkit-speech />
 	<section id="glass"></section>
-	<section id="board"></section>
+	<!--<section id="board"></section>-->
 	
 	<script src="js/processing-1.4.1.min.js"></script>
 	<script src="js/jquery-1.9.1.min.js"></script>
@@ -162,56 +162,21 @@
 
 
 			$("#glass").niceScroll({horizrailenabled:false,cursorborderradius:0,autohidemode:false}).resize();
-			$("#board").niceScroll({horizrailenabled:false,cursorborderradius:0,autohidemode:false}).resize();
-
-			document.getElementById("board").addEventListener("input", function() {
-				$("#board").niceScroll({horizrailenabled:false,cursorborderradius:0,autohidemode:false}).resize();
-			}, false);
 
 			// Check if the user's web browser supports HTML5 Speech Input API
 			if(document.createElement('input').webkitSpeech == undefined) {
 				showInfo("We are sorry but Dictation requires Google Chrome.");
 			}else {
-		 		showInfo("Daily active");
 				// Get the default locale of the user's browser (e.g. en-US, or de)
 			    var _language = window.navigator.userLanguage || window.navigator.language;
 			    $("body").attr("lang", _language).focus();
-		 
-				// Make the text region editable to easily fix transcription errors
-			    $("#board").click(function () {
-			    	$('#board').attr('contentEditable', 'true');
-			    });
 		  	}
 		 
 			// This is called when Chrome successfully transcribes the spoken word
-			$("body").on("webkitspeechchange", function (e) {
-				var val = $(this).val();
-
-				// Did the user say Delete? Then clear the canvas.
-				if(val == "delete everything") {
-					$("#board").text("");
-					return;
-				}
-			    
-				// For "new line" commands, add double line breaks.
-				if(val == "new line"){
-					val = "<br /><br />";
-				}else{
-
-					// Capitalize the first letter of the sentence.
-					val = val.substr(0, 1).toUpperCase() + val.substr(1);
-
-					// If the last letter is a alphanumeric character, add a period (full stop)
-					if(val.match(/[a-zA-Z]$/)) {
-						val = val + ".";
-					}
-
-					// Append the transcribed text but set the focus to the hidden speech input.
-					// This enables keyboard shortcut Ctrl+Shift+Period (.) for speech mode.
-					$("#board").append(val + " ").fadeIn();
-					$(this).val("").focus();
-				}
-			   	
+			$("body").bind("webkitspeechchange", function (e) {
+				var val = $("#input").val();
+				daily(val);
+				$("#input").val("");			    
 			});
 
 			$("#status").on('click',function(){
@@ -221,9 +186,15 @@
 
 		});
 
+		function daily(said){
+			if(said == "start") {
+				showInfo("Daily active");
+				return;
+			}
+		}
 
 		function save() {
-		  var d = document.getElementById("labnol").innerHTML;
+		  var d = document.getElementById("input").innerHTML;
 		  filepicker.setKey('AeoWySYsRQWugIlof6Gegz');
 		  filepicker.store(d, function(a) {
 		    filepicker['export'](a, {extension: '.txt', services:['DROPBOX','GOOGLE_DRIVE','COMPUTER','SEND_EMAIL']}, function(a) {
@@ -234,7 +205,7 @@
 		var working, speech;
 
 		if (typeof(webkitSpeechRecognition) !== 'function') {  
-		  document.getElementById("labnol").innerHTML = "We are sorry but Dictation requires the latest version of Google Chrome on your desktop.";
+		  document.getElementById("input").innerHTML = "We are sorry but Dictation requires the latest version of Google Chrome on your desktop.";
 		  document.getElementById("messages").style.display = "none";
 		} else {
 
@@ -267,7 +238,7 @@
 		    for (var i = e.resultIndex; i < e.results.length; ++i) {
 		      if (e.results[i].isFinal) {
 
-		        var words = document.getElementById("labnol"); 
+		        var words = document.getElementById("input"); 
 		        var val = e.results[i][0].transcript; 
 
 		        if (val === "\n\n") {
@@ -286,10 +257,11 @@
 		          val = val.substr(0,1).toUpperCase() + val.substr(1);          
 		        }        
 		        
-		        document.getElementById("notfinal").innerHTML = ""; 
+		        //document.getElementById("notfinal").innerHTML = ""; 
 		        words.innerHTML += val;        
 		      } else {        
-		        document.getElementById("notfinal").innerHTML = e.results[i][0].transcript;
+		        //document.getElementById("notfinal").innerHTML = e.results[i][0].transcript;
+		        daily(e.results[i][0].transcript);
 		      }
 		    }
 		  };
